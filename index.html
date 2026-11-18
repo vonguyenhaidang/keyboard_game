@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>Keyboard Quest – Chiến Tranh Alien</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#10172D;--sky:#4DB9F5;--gold:#FFD166;--purple:#8B7CF6;--mint:#65D6AD;--coral:#FF7B72;--u:60px;font-family:'Baloo 2',ui-rounded,'Trebuchet MS',system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box;margin:0;user-select:none}
+html,body{height:100%;overflow:hidden;background:var(--navy);color:#fff}
+button,input{font:inherit;color:inherit}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg,var(--navy));transition:background 1s;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);overflow:hidden}
+#st1,#st2,#bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#st1,#st2{animation:drift var(--t) linear infinite}
+#st1{--s:220px;--t:30s;background:radial-gradient(2px 2px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 140px 120px,#bfe6ff,transparent),radial-gradient(1.5px 1.5px at 80px 170px,#fff,transparent);background-size:220px 220px}
+#st2{--s:380px;--t:70s;background:radial-gradient(3px 3px at 60px 90px,#ffe9a8,transparent),radial-gradient(2.5px 2.5px at 250px 250px,#fff,transparent),radial-gradient(3px 3px at 330px 40px,#c9b8ff,transparent);background-size:380px 380px}
+.warp #st1,.warp #st2{--t:.7s}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:25}.warp #flash{animation:flash .9s}
+#hud{position:relative;display:flex;justify-content:space-between;align-items:center;padding:6px 16px;background:#070c1fcc;z-index:5;gap:10px;border-bottom:2px solid #4DB9F544}
+#hud>div{display:flex;align-items:center;gap:12px;flex:1}#hud>div:nth-child(2){justify-content:center}#hud>div:last-child{justify-content:flex-end}
+.logo{font-weight:800;font-size:1.25rem;color:var(--gold);line-height:1}.logo small{display:block;font-size:.78rem;color:var(--sky)}
+.fr{perspective:200px;filter:grayscale(1) opacity(.4);transition:.5s}.fr.on{filter:drop-shadow(0 0 8px var(--purple))}
+.gem{width:20px;height:28px;position:relative;transform-style:preserve-3d;animation:gspin 3s linear infinite}
+.gem::before,.gem::after{content:'';position:absolute;inset:0;clip-path:polygon(50% 0,100% 35%,50% 100%,0 35%);background:linear-gradient(135deg,#fff,var(--purple) 50%,#2a1f6b)}.gem::after{transform:rotateY(90deg)}
+.star{display:inline-block;width:18px;height:18px;vertical-align:-3px;background:linear-gradient(#fff3b0,#FFB020);clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);animation:gspin 2.4s linear infinite}
+#stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:space-around;padding:0 3vw;gap:2vw;z-index:2}
+#cl{position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;max-width:32vw}
+#bubble{background:#fff;color:var(--navy);padding:8px 14px;border-radius:20px 20px 20px 4px;font-weight:700;font-size:clamp(13px,2vh,20px);box-shadow:0 5px 0 #0004;line-height:1.25}
+#botc{display:block;width:min(30vh,230px);height:min(17vh,130px)}
+#mission{flex:1;max-width:50vw;text-align:center;z-index:2;text-shadow:0 2px 0 #0008}
+#prompt{font-size:clamp(18px,3.5vh,36px);font-weight:800}
+#target{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.ch{min-width:clamp(32px,6.5vh,58px);height:clamp(40px,7.5vh,68px);padding:0 6px;display:grid;place-items:center;font-size:clamp(22px,4.6vh,44px);line-height:1;font-weight:800;border-radius:12px;background:linear-gradient(#ffffff66,#ffffff26);box-shadow:0 1px #0006,0 2px #0006,0 3px #0006,0 4px #0006,0 5px #0006,0 6px 8px #0008;text-shadow:none;transform:perspective(420px) rotateX(14deg)}
+.ch.big{min-width:clamp(70px,13vh,120px);height:auto;padding:.05em .38em .1em;font-size:clamp(30px,7.5vh,68px);color:#10172D;background:linear-gradient(#FFE9A6,#FFB020);border:3px solid #fff9;box-shadow:0 1px #c27c00,0 2px #c27c00,0 3px #c27c00,0 4px #c27c00,0 5px #c27c00,0 6px #c27c00,0 7px #c27c00,0 8px #c27c00,0 16px 20px #000a;text-shadow:1px 1px 0 #fff9,2px 2px 0 #c27c00,3px 3px 0 #b87000,4px 4px 3px #0005;animation:spin3d 3.4s ease-in-out infinite}
+.ch.ok{background:var(--mint);color:var(--navy)}.ch.bad{background:var(--coral)}.ch.cur{background:var(--gold);color:var(--navy);animation:pulse 1s infinite}
+#mean{min-height:1.2em;font-size:clamp(14px,2.6vh,24px);color:var(--gold)}
+#hands{display:none;font-size:.78rem;opacity:.85;max-width:34vw;line-height:1.1}
+#lane{position:relative;height:clamp(84px,18vh,150px);margin:2px 0}
+#boss{display:none;align-items:center;gap:10px;justify-content:center;font-weight:800}.bar{flex:1;max-width:260px;height:14px;border-radius:9px;background:#0007;overflow:hidden}.bar i{display:block;height:100%;background:var(--coral);transition:width .5s}
+#kbwrap{height:50vh;perspective:1300px;display:flex;justify-content:center;align-items:flex-start;padding-top:.5vh;z-index:3;position:relative}
+#kb{transform-style:preserve-3d;transform:rotateX(36deg);display:flex;flex-direction:column;gap:calc(var(--u)*.14);padding:calc(var(--u)*.3);border-radius:22px;background:#0a1030;box-shadow:0 0 0 calc(var(--u)*.08) #4DB9F5,0 0 60px #4DB9F566}
+.row{display:flex;gap:calc(var(--u)*.14);transform-style:preserve-3d}
+.k{width:calc(var(--u)*var(--w,1));height:var(--u);position:relative;transform-style:preserve-3d;cursor:pointer}
+.sp{width:calc(var(--u)*var(--w))}
+.cap{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .07s}
+.top{position:absolute;inset:0;border-radius:12px;background:var(--c);transform:translateZ(calc(var(--u)*.3));display:grid;place-items:center;font-weight:800;font-size:calc(var(--u)*.52);color:#10172D;border:3px solid #ffffffaa;line-height:1}
+.top.sm{font-size:calc(var(--u)*.3)}
+.side{position:absolute;left:0;bottom:0;width:100%;height:calc(var(--u)*.3);background:var(--c);filter:brightness(.5);transform-origin:bottom;transform:rotateX(-90deg)}
+.k.down .cap{transform:translateZ(calc(var(--u)*-.22))}
+.k.target .cap{transform:translateZ(calc(var(--u)*.15))}
+.k.target .top{animation:glow .8s infinite;background:#fff}
+.k.need .top{box-shadow:0 0 0 4px var(--mint),0 0 14px var(--mint)}
+.k.ok .top{box-shadow:0 0 0 6px #fff,0 0 40px 14px var(--mint)}.k.bad .top{box-shadow:0 0 0 6px var(--coral),0 0 34px 12px var(--coral)}
+.k.bump .top::before{content:"";position:absolute;bottom:8%;width:30%;height:6px;border-radius:4px;background:#10172DAA}
+#foot{position:relative;display:flex;align-items:center;gap:14px;padding:6px 16px;background:#070c1fcc;z-index:5}
+#pw{width:22vw}#pw .bar{max-width:none;height:12px}#pw .bar i{background:var(--mint)}#pt{font-size:.85rem;opacity:.85}
+#fb{flex:1;font-size:1.15rem;font-weight:700;text-align:center;min-height:1.5em}#fb.bad{color:var(--coral)}#fb.good{color:var(--mint)}
+.btn{background:var(--purple);border:0;border-radius:999px;padding:6px 18px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #0006}.btn.gold{background:var(--gold);color:var(--navy)}.btn:active{transform:translateY(3px);box-shadow:none}
+#next{display:none;animation:pulse 1s infinite;font-size:1.3rem;padding:8px 26px}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(350px,90vw);background:#070c1ff7;z-index:20;transform:translateX(100%);transition:.3s;padding:14px;overflow:auto;font-size:.95rem}#drawer.open{transform:none}
+#drawer h2{color:var(--gold)}#clk{margin:4px 0 8px;color:var(--mint);font-weight:700}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}.btns .btn{font-size:.85rem;padding:5px 8px;border-radius:14px}.btns .btn.on{background:var(--mint);color:var(--navy)}
+#guide h3{color:var(--sky);font-size:.9rem;margin-top:8px}#guide p{line-height:1.3}
+.ov{position:fixed;inset:0;display:none;place-items:center;background:#070c1fea;z-index:30}.ov.show{display:grid}
+.card{background:linear-gradient(160deg,#2b2f6b,#10172D);border:3px solid var(--gold);border-radius:28px;padding:24px 34px;max-width:min(620px,92vw);text-align:center}
+.card h1{font-size:2.3rem;color:var(--gold);line-height:1}.card h1 small{display:block;font-size:1.1rem;color:var(--sky)}
+.card p{margin:10px 0}.card input{background:#fff;color:var(--navy);border:0;border-radius:14px;padding:8px 14px;font-size:1.3rem;text-align:center;width:80%;margin:6px 0;user-select:text}
+.fl{position:fixed;font-weight:800;font-size:2rem;color:var(--gold);animation:fly 1s forwards;pointer-events:none;z-index:15;text-shadow:0 2px 0 #000;transform:translateX(-50%)}
+#cf{position:fixed;inset:0;pointer-events:none;z-index:40}
+#cert .card{background:linear-gradient(160deg,#fff6d6,#ffe08a);color:var(--navy);border-color:var(--purple);border-width:8px}
+#cert h1{color:var(--purple)}#cert ul{list-style:none;text-align:left;display:inline-block;font-weight:700;font-size:1.1rem}
+#cert li::before{content:'';display:inline-block;width:12px;height:16px;margin-right:8px;clip-path:polygon(50% 0,100% 35%,50% 100%,0 35%);background:var(--purple)}
+#warn{position:fixed;top:28%;left:0;right:0;text-align:center;font-size:clamp(26px,7vw,76px);font-weight:800;color:#FF3b3b;text-shadow:0 0 22px #f00,0 4px 0 #000;background:linear-gradient(90deg,transparent,#000b,transparent);pointer-events:none;z-index:26;opacity:0}#warn.on{animation:warn 2.6s}@keyframes warn{0%,100%{opacity:0}10%,30%,50%,70%,90%{opacity:1}20%,40%,60%,80%{opacity:.15}}#frags{display:flex;gap:3px}#lane{height:clamp(6px,2vh,14px);margin:0}#mission{background:radial-gradient(#050a1ecc,#050a1e00 72%);padding:4px 10px}#cl{align-self:flex-start;margin-top:6px}.gem{width:12px;height:17px}
+@keyframes drift{to{background-position:calc(var(--s)*-1) var(--s)}}
+@keyframes gspin{to{transform:perspective(120px) rotateY(360deg)}}
+@keyframes pulse{50%{transform:scale(1.07)}}@keyframes fly{to{transform:translate(-50%,-70px);opacity:0}}@keyframes flash{30%{opacity:.85}}
+@keyframes spin3d{0%,100%{transform:perspective(500px) rotateY(-24deg) rotateX(10deg)}50%{transform:perspective(500px) rotateY(24deg) rotateX(10deg)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 4px var(--gold),0 0 24px 6px var(--gold)}50%{box-shadow:0 0 0 8px var(--gold),0 0 52px 18px var(--gold)}}
+@media(max-width:860px){#stage{flex-direction:column;justify-content:center;gap:0;padding:0 2vw}#cl{flex-direction:row;align-items:center;max-width:96vw}#mission{max-width:96vw;width:100%}#bubble{font-size:12px;padding:6px 10px}#hud{padding:4px 8px}.logo{font-size:1rem}.logo small,#stu{display:none}#foot{gap:6px;padding:4px 8px;flex-wrap:wrap}#pw{width:34vw}#fb{font-size:.9rem}#kbwrap{height:42vh}}
+@media(prefers-reduced-motion:reduce){#st1,#st2,.gem,.star,.ch.big{animation:none}}
+#stage{--mh:17vh}
+#mission{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:min(94vw,760px);max-width:none;flex:none;background:#050a1ecc;border:2px solid #4DB9F544;border-radius:22px;padding:2px 14px 6px;z-index:3}
+#prompt{font-size:clamp(14px,2.6vh,26px)}#mean{min-height:0;font-size:clamp(12px,2vh,18px)}#lane{display:none}#target{margin:2px 0;gap:4px}
+.ch{min-width:clamp(22px,4.2vh,38px);height:clamp(30px,5.4vh,48px);font-size:clamp(16px,3.4vh,32px)}
+.ch.big{min-width:clamp(56px,9vh,90px);height:auto;font-size:clamp(26px,5.6vh,50px)}
+#boss{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:min(70vw,480px);z-index:3;background:#050a1ecc;border-radius:16px;padding:2px 12px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script></head><body>
+<div id="app">
+ <div id="st1"></div><div id="st2"></div><canvas id="bg"></canvas>
+ <header id="hud">
+  <div><div class="logo">KEYBOARD QUEST<small id="wn"></small></div></div>
+  <div id="frags"></div>
+  <div><span id="stu"></span><span><i class="star"></i> <b id="stars">0</b></span><button class="btn" id="gear" title="Bảng giáo viên (F2)">Giáo viên</button></div>
+ </header>
+ <main id="stage">
+  <div id="boss"><b id="bn">MẪU HẠM</b><div class="bar"><i id="hp"></i></div></div>
+  <div id="cl"><div id="bubble"></div><canvas id="botc"></canvas></div>
+  <div id="mission">
+   <div id="prompt"></div><div id="target"></div><div id="mean"></div>
+   <div id="lane"></div>
+  </div>
+ </main>
+ <div id="kbwrap"><div id="kb"></div></div>
+ <footer id="foot">
+  <div id="pw"><div class="bar"><i id="prog"></i></div><span id="pt"></span> <span id="acc"></span></div>
+  <div id="hands">Tay trái: A S D F · Tay phải: J K L ; · Hai ngón trỏ chạm vạch nổi trên F và J</div>
+  <div id="fb"></div>
+  <button class="btn" id="hint">Gợi ý</button>
+  <button class="btn gold" id="next">Qua màn ▶</button>
+ </footer>
+</div>
+<div id="flash"></div><div id="warn"></div>
+
+<aside id="drawer"><button class="btn gold" id="dClose" style="float:right;font-size:1.1rem">✕ Đóng</button><h2>Bảng giáo viên</h2><div id="clk"></div>
+ <div class="btns">
+  <button class="btn" id="bStart">▶ Bắt đầu bài</button><button class="btn" id="bPause">Tạm dừng</button>
+  <button class="btn" id="bPrev">◀ Nhiệm vụ trước</button><button class="btn" id="bNext">Nhiệm vụ sau ▶</button>
+  <button class="btn" id="bReplay">Nghe lại lời thoại</button><button class="btn" id="bReset">Làm lại nhiệm vụ</button>
+  <button class="btn" id="bGuideT">Ẩn hướng dẫn</button><button class="btn" id="bSnd">Âm thanh: bật</button>
+  <button class="btn" id="bG1">Lớp 1</button><button class="btn" id="bG2">Lớp 2</button>
+  <button class="btn" id="bRestart" style="grid-column:span 2">Chơi lại từ đầu</button>
+ </div>
+ <div id="guide"></div>
+ <p style="margin-top:10px;opacity:.6;font-size:.8rem">Phím tắt: F2 mở/đóng bảng này. Trò chơi không tự chuyển màn: nút Qua màn chỉ hiện khi hoàn thành và học sinh tự bấm.</p>
+</aside>
+
+<div class="ov show" id="start"><div class="card">
+ <h1>KEYBOARD QUEST<small>Chiến Tranh Alien · 15 Mặt Trận</small></h1>
+ <p>Alien xâm lăng Trái Đất! Hãy lái chiến đấu cơ qua 15 mặt trận, gõ đúng phím để bắn hạ alien và cứu hành tinh nhé!</p>
+ <input id="nm" maxlength="12" placeholder="Tên phi công của em" autocomplete="off">
+ <p><button class="btn" id="sg1">Lớp 1</button> <button class="btn" id="sg2">Lớp 2</button></p>
+ <button class="btn gold" id="go" style="font-size:1.4rem;padding:8px 30px">Cất cánh!</button>
+</div></div>
+<div class="ov" id="pause"><div class="card"><h1>Tạm dừng</h1><p><button class="btn gold" id="resume">Tiếp tục</button></p></div></div>
+<div class="ov" id="cert"><div class="card">
+ <h1>CHIẾN BINH<small style="color:var(--purple)">BÀN PHÍM KEYBOARD QUEST</small></h1>
+ <p>Trao tặng phi công</p><h1 id="cn" style="color:var(--navy)"></h1>
+ <p><ul><li>Nhà thám hiểm bàn phím</li><li>Bậc thầy ngón tay</li><li>Thợ xây từ</li><li>Anh hùng gõ phím</li><li>Người bảo vệ Keytopia</li></ul></p>
+ <p id="cs"></p><button class="btn" id="cClose">Đóng</button> <button class="btn gold" id="cAgain">Chơi lại</button>
+</div></div>
+<canvas id="cf"></canvas>
+
+<script>
+/* ===== KEYBOARD QUEST – ĐẠI CHIẾN PHÍM KHÔNG GIAN =====
+   1 dữ liệu (15 nhiệm vụ) · 2 bàn phím 3D · 2b mô hình 3D Three.js · 3 logic · 4 âm thanh · 5 điều khiển */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ---------- 1. DỮ LIỆU: 5 chương × 3 nhiệm vụ = 15 nhiệm vụ (~4 phút/nhiệm vụ = 60 phút) ---------- */
+const ACT=[
+ {n:'Hành tinh Phím Lạc',bg:'radial-gradient(ellipse at 20% 100%,#1d6b6b,transparent 55%),linear-gradient(#0b1230,#16275a)'},
+ {n:'Trạm Ngón Tay',bg:'radial-gradient(ellipse at 80% 100%,#5b3fb5,transparent 55%),linear-gradient(#0d0b2b,#2a1f6b)'},
+ {n:'Hang Ghép Từ',bg:'radial-gradient(ellipse at 50% 100%,#1f8a8a,transparent 60%),linear-gradient(#071a2b,#0f3b52)'},
+ {n:'Mật khu GLITCH',bg:'radial-gradient(ellipse at 70% 100%,#b3263e,transparent 55%),linear-gradient(#1a0a22,#45103b)'},
+ {n:'Lõi Pha Lê',bg:'radial-gradient(ellipse at 50% 100%,#c58f1f,transparent 55%),linear-gradient(#0b1030,#3b2f7a)'}];
+const KEY=(c,pre='Tìm phím ')=>({p:pre+c+'!',k:[CODE(c)],big:c,hide:1});
+const KS=(s,pre)=>[...s].map(c=>KEY(c,pre));
+const SPC={p:'Tìm phím DẤU CÁCH (Space)!',k:['Space'],big:'SPACE',hide:1},ENT={p:'Tìm phím ENTER!',k:['Enter'],big:'ENTER',hide:1},BSP={p:'Tìm phím BACKSPACE (xóa)!',k:['Backspace'],big:'XÓA',hide:1},SHF={p:'Tìm phím SHIFT!',k:['ShiftLeft','ShiftRight'],big:'SHIFT',hide:1};
+const TXT=(t,p,m,sh)=>({p,t,m,sh}), Q=(p,k)=>({p,k,q:1});
+const TW=(s,p,sh)=>s.split(',').map(x=>{const a=x.split(':');return TXT(a[0],p,a[1]||'',sh)});
+const nm=()=>S.name;
+const SENT=[['I AM A HERO','Tôi là một anh hùng'],['I LOVE ROBOTS','Tôi yêu người máy'],['MY NAME IS ','Tên tôi là …'],['HELLO WORLD!','Xin chào thế giới!'],['FIRE THE LASER','Bắn tia laser!'],['I SEE A STAR','Tôi thấy một ngôi sao'],['WE LOVE SPACE','Chúng tôi yêu vũ trụ'],['DEFEAT THE ALIENS','Đánh bại alien!'],['THE ROCKET IS FAST','Tên lửa rất nhanh'],['GO TO THE MOON','Bay lên mặt trăng'],['I CAN TYPE','Tôi biết gõ phím'],['WE WIN','Chúng ta thắng!']];
+const two=(g,a,b)=>g==1?a:a.concat(b);
+// f = loại mô hình 3D kẻ địch: 0 thiên thạch, 1 UFO, 2 tinh thể, 3 boss GLITCH, 4 lõi pha lê
+const M=[
+ {n:'Mã tọa độ trái',cl:'Hàng số 1 2 3 4 5 (tay trái)',f:0,
+  d:'Rầm! Phi thuyền Phím-1 rơi xuống Hành tinh Phím Lạc. Glitch làm hỏng bảng điều hướng, mất các số bên trái. Hãy nhập tọa độ 1 đến 5!',
+  task:'Nghe giáo viên gọi số, bấm đúng số đó.',guide:'Gọi từng số 1-5 (tay trái). Lớp 2: số bị ẩn, chỉ nghe giáo viên đọc.',cond:'Bấm đúng các số 1-5 và gõ các dãy số ngắn.',
+  items:g=>two(g,[...KS('12345','Tìm số '),...KS('351','Tìm số ')],[...KS('42','Tìm số '),...TW('123,12345,54321,135','Gõ dãy số!')])},
+ {n:'Mã tọa độ phải',cl:'Hàng số 6 7 8 9 0 (tay phải)',f:0,
+  d:'Bản đồ hiện ra một nửa! Nhập các số 6 đến 0 bằng tay phải để thấy đường chạy trốn của Glitch.',
+  task:'Bấm đúng số trên hàng số, tay phải.',guide:'Gọi số 6-0 và các dãy số lớn hơn.',cond:'Bấm đúng các số 6-0 và gõ các dãy số.',
+  items:g=>two(g,[...KS('67890','Tìm số '),...KS('097','Tìm số ')],[...KS('86','Tìm số '),...TW('678,67890,09876,2468,13579','Gõ dãy số!')])},
+ {n:'Cửa kho báu',cl:'Space, Enter, Backspace, Shift',f:0,
+  d:'Kho báu bị khóa bằng bốn phím đặc biệt: Space, Enter, Backspace và Shift. Mở khóa để lấy mảnh pha lê đầu tiên!',
+  task:'Tìm phím đặc biệt rồi gõ các từ có dấu cách.',guide:'Giới thiệu 4 phím lớn: Space tạo khoảng cách, Enter xuống dòng, Backspace xóa, Shift giữ để gõ ký hiệu.',cond:'Bấm đúng các phím đặc biệt và gõ các cụm từ có dấu cách.',
+  items:g=>two(g,[SPC,ENT,BSP,SHF,SPC,BSP,...TW('A B,I AM,GO GO','Gõ có dấu cách!')],[ENT,SHF,...TW('A B C,YES NO,WE GO UP','Gõ có dấu cách!')])},
+ {n:'Đánh thức tay trái',cl:'Hàng cơ sở trái A S D F',f:1,need:['KeyA','KeyS','KeyD','KeyF'],
+  d:'Mảnh pha lê số 1 chỉ đường tới Trạm Ngón Tay. Đặt ngón tay trái lên A S D F để đánh thức các tinh linh!',
+  task:'Đặt 4 ngón tay trái lên hàng cơ sở, bấm phím sáng.',guide:'Chỉ ngón út-áp út-giữa-trỏ trên A S D F; ngón trỏ chạm vạch nổi trên F.',cond:'Bấm A S D F và gõ các từ chỉ dùng phím tay trái.',
+  items:g=>two(g,[...KS('ASDFFDSA'),...TW('AS,SAD,DAD,ADD','Tay trái gõ từ!')],TW('FAD,ASDF,FADS,DADS','Tay trái gõ từ!'))},
+ {boss:1,n:'Đánh thức tay phải',cl:'Hàng cơ sở phải J K L ;',f:1,need:['KeyJ','KeyK','KeyL','Semicolon'],
+  d:'Tay phải tiếp tục! J K L và dấu chấm phẩy nạp năng lượng cho khiên bảo vệ trạm.',
+  task:'Đặt 4 ngón tay phải lên J K L ; rồi bấm phím sáng.',guide:'Ngón trỏ phải trên J (vạch nổi), giữa K, áp út L, út dấu chấm phẩy.',cond:'Bấm J K L ; và gõ các dãy luyện tập tay phải.',
+  items:g=>two(g,[...KS('JKL;LKJ;'),...TW('JK,KL,JKL;,JJKK','Tay phải gõ dãy!')],TW('KLKL,LKJ;,J;L;K','Tay phải gõ dãy!'))},
+ {n:'Sửa động cơ trạm',cl:'Cả hàng cơ sở + G H',f:1,need:['KeyA','KeyS','KeyD','KeyF','KeyJ','KeyK','KeyL','Semicolon','KeyG','KeyH'],
+  d:'Hai tay cùng làm việc! Gõ các từ hàng cơ sở để sửa động cơ. Phím G và H nằm giữa hai bàn tay.',
+  task:'Hai ngón trỏ ở F và J. Gõ từ trên màn hình.',guide:'Nhắc quay về F và J sau khi bấm G, H. Đọc nghĩa từng từ.',cond:'Gõ đúng tất cả các từ hàng cơ sở.',
+  items:g=>two(g,[...KS('GHHG'),...TW('ALL:tất cả,GAS:khí ga,HAD:đã có,HALF:một nửa,FLAG:lá cờ,GLAD:vui mừng','Sửa động cơ!')],TW('SHALL:sẽ,FALLS:rơi xuống,HASH:dấu thăng,SALAD:món rau trộn','Sửa động cơ!'))},
+ {n:'Cổng hang bên trái',cl:'Hàng trên trái Q W E R T',f:2,need:[...'QWERT'].map(c=>'Key'+c),
+  d:'Mảnh pha lê số 2! Glitch trốn trong Hang Ghép Từ. Hàng phím trên bên trái Q W E R T là mật mã cổng hang.',
+  task:'Với tay lên hàng trên, rồi về lại hàng cơ sở.',guide:'Ngón nào lên phím nào: Q (út), W (áp út), E (giữa), R-T (trỏ).',cond:'Bấm Q W E R T và gõ các từ có chữ hàng trên trái.',
+  items:g=>two(g,[...KS('QWERT'),...KS('TREWQ'),...TW('WET:ướt,TEA:trà,RED:đỏ,TREE:cây','Mở cổng hang!')],TW('WATER:nước,FEET:bàn chân,SWEET:ngọt,STREET:đường phố','Mở cổng hang!'))},
+ {n:'Tinh thể dẫn đường',cl:'Hàng trên phải Y U I O P',f:2,need:[...'YUIOP'].map(c=>'Key'+c),
+  d:'Cổng hang mở! Hàng trên bên phải Y U I O P làm sáng các tinh thể dẫn đường.',
+  task:'Tay phải với lên hàng trên, rồi về J K L.',guide:'Y-U ngón trỏ, I giữa, O áp út, P út.',cond:'Bấm Y U I O P và gõ các từ có chữ hàng trên phải.',
+  items:g=>two(g,[...KS('YUIOP'),...KS('POIUY'),...TW('YOU:bạn,TOY:đồ chơi,TOP:đỉnh,OIL:dầu','Thắp sáng tinh thể!')],TW('PORT:cảng,PIPE:ống,POUR:rót,PUPIL:học sinh','Thắp sáng tinh thể!'))},
+ {n:'Cửa bí mật',cl:'Hàng dưới Z X C V B N M',f:2,need:[...'ZXCVBNM'].map(c=>'Key'+c),
+  d:'Gần căn cứ rồi! Hàng dưới Z X C V B N M mở cửa bí mật của Glitch. Mảnh pha lê số 3 nằm bên trong!',
+  task:'Ngón tay hạ xuống hàng dưới, rồi về hàng cơ sở.',guide:'Hàng dưới nằm dưới hàng cơ sở. Nhắc giữ tư thế tay.',cond:'Bấm Z X C V B N M và gõ các từ hàng dưới.',
+  items:g=>two(g,[...KS('ZXCVBNM'),...TW('ZOO:sở thú,VAN:xe tải nhỏ,BOX:cái hộp,CAN:có thể','Mở cửa bí mật!')],[...KS('MNBVCXZ'),...TW('MAN:người đàn ông,NEXT:tiếp theo,CAVE:hang động,ZOOM:phóng to','Mở cửa bí mật!')])},
+ {boss:1,n:'Mật thư dấu câu',cl:'Dấu câu , . ; \' / -',f:1,need:['Comma','Period','Semicolon','Quote','Slash','Minus'],
+  d:'Mật khu của Glitch gửi mật thư đầy dấu câu: phẩy, chấm, nháy… Gõ đúng để giải mã!',
+  task:'Tìm dấu câu trên bàn phím, gõ câu có dấu.',guide:'Dấu phẩy và chấm nằm cạnh M ở hàng dưới. Gõ không cần Shift.',cond:'Bấm các dấu câu và gõ các câu có dấu.',
+  items:g=>two(g,[...KS(',.;\'/-','Tìm dấu '),...TW('A, B.,NO, YES.,GO. STOP.','Giải mật thư!')],TW('I SEE A STAR.,HI ALIEN.,A-B,1/2','Giải mật thư!'))},
+ {n:'Khiên Shift',cl:'Giữ Shift + ! ? : ( )',f:1,
+  d:'Khiên của Glitch cần giữ Shift để gõ ! và ? Phi công hãy giữ Shift rồi bấm phím!',
+  task:'Giữ phím Shift bằng ngón út, tay kia bấm phím.',guide:'Dạy giữ Shift bằng tay đối diện. Trò chơi kiểm tra Shift có được giữ không.',cond:'Gõ đúng các ký hiệu bằng Shift.',
+  items:g=>two(g,[SHF,...TW('HELP!,GO!,YES!,WHY?','Giữ Shift + phím!',1)],TW('WHO?,A: B,(OK),STOP!,WOW!','Giữ Shift + phím!',1))},
+ {n:'Đại chiến GLITCH',cl:'Câu hoàn chỉnh',f:3,
+  d:'Ha ha ha! Ta là tướng GLITCH! Gõ đúng lá bài của ta, mỗi câu đúng phi thuyền sẽ bắn ta một phát!',
+  task:'Gõ câu trên lá bài. Nhớ Space giữa các từ. Chính xác quan trọng hơn nhanh!',guide:'Khen sự cẩn thận, không thúc ép tốc độ. Câu đúng phá vỡ một lớp phòng thủ.',cond:'Gõ đúng tất cả các câu, phá hết hàng phòng thủ.',
+  items:g=>SENT.slice(0,g==1?8:12).map(s=>TXT(s[0]==='MY NAME IS '?s[0]+nm():s[0],'Câu khai hỏa:',s[0]==='MY NAME IS '?'Tên tôi là '+nm():s[1]))},
+ {n:'Mật mã chữ và số',cl:'Trộn chữ cái và số',f:2,
+  d:'Đánh bại Glitch rồi! Mảnh pha lê số 4! Lõi Pha Lê cần mật mã trộn cả chữ lẫn số.',
+  task:'Gõ mật mã gồm chữ và số.',guide:'Nhắc di chuyển tay lên hàng số rồi về hàng cơ sở.',cond:'Gõ đúng tất cả các mật mã.',
+  items:g=>two(g,TW('A1,B2,C3,K9,L7,X5Z0,M4N8','Nhập mật mã!'),TW('Q1W2,P0O9,A1B2C3,S5D6F7,JK89','Nhập mật mã!'))},
+ {n:'Đăng ký phi công',cl:'Gõ tên của em',f:4,
+  d:'Lõi Pha Lê cần biết tên phi công để nhận chủ. Hãy gõ tên của em thật chuẩn!',
+  task:'Gõ tên và các câu có tên em.',guide:'Học sinh gõ tên mình. Nhắc Space giữa các từ.',cond:'Gõ đúng tên và các câu giới thiệu.',
+  items:g=>two(g,[TXT(nm(),'Gõ tên của em:'),TXT('MY NAME IS '+nm(),'Giới thiệu:'),TXT('I AM '+nm(),'Giới thiệu:'),TXT('PILOT '+nm(),'Gõ chức danh:')],[TXT('HELLO, '+nm()+'!','Gõ lời chào:'),TXT(nm()+' LOVES SPACE.','Gõ câu:')])},
+ {boss:1,n:'Thắp sáng Lõi Pha Lê',cl:'Ôn tập toàn bộ',f:4,
+  d:'Mảnh cuối cùng! Gõ lời chào, trả lời các câu hỏi rồi Lõi Pha Lê sẽ sáng, Keytopia được cứu!',
+  task:'Gõ thông điệp, rồi bấm đúng phím để trả lời từng câu hỏi.',guide:'Để học sinh tự làm. Sau cùng là lễ trao chứng nhận.',cond:'Gõ thông điệp, trả lời đúng các câu hỏi và gõ hai câu cuối.',
+  items:()=>[TXT('HELLO! MY NAME IS '+nm()+'.','Thông điệp cuối cùng:','Xin chào! Tên tôi là '+nm()),
+   Q('Phím nào tạo KHOẢNG CÁCH giữa các từ?',['Space']),Q('Phím nào XÓA một chữ?',['Backspace']),Q('Phím nào xuống dòng mới?',['Enter']),Q('Phím nào giúp gõ dấu ! và ?',['ShiftLeft','ShiftRight']),Q('Hai ngón trỏ nghỉ ở phím nào? (F hoặc J)',['KeyF','KeyJ']),
+   TXT('WE ARE KEYBOARD HEROES','Gõ lời thề chiến binh:','Chúng tôi là anh hùng bàn phím'),TXT('EARTH IS SAFE!','Câu cuối cùng!','Trái Đất đã an toàn!')]}
+];
+/* ---------- 1b. 15 MẶT TRẬN CHIẾN TRANH ALIEN: mỗi nhiệm vụ một câu chuyện, một đội hình alien chuyển động riêng, một bản nhạc ---------- */
+// b: nhịp/phút · r: nốt gốc · ac: màu alien · pc: màu hành tinh nền
+const BGF=(c,p)=>`radial-gradient(ellipse at ${p}% 100%,${c}88,transparent 60%),linear-gradient(#060a20,#171a4a)`;
+const TH=[
+{n:'Cuộc Xâm Lăng Bắt Đầu',d:'Phi đội alien tấn công Trái Đất! Nhập mã số 1 đến 5 bằng tay trái để bật lá chắn!',bg:BGF('#4DB9F5',20),pc:0x4DB9F5,ac:0x65D6AD,b:120,r:0},
+{n:'Lá Chắn Hành Tinh',d:'Alien phá hỏng nửa lá chắn bên phải! Gõ số 6 đến 0 bằng tay phải để dựng lại lá chắn.',bg:BGF('#8B7CF6',80),pc:0x8B7CF6,ac:0xFF7B72,b:108,r:2},
+{n:'Mở Kho Vũ Khí',d:'Kho vũ khí bị khóa! Tìm Space, Enter, Backspace và Shift để mở kho và nạp đạn.',bg:BGF('#FFB020',50),pc:0xFFB020,ac:0xB388FF,b:132,r:4},
+{n:'Pháo Trái Khai Hỏa',d:'Alien tiến gần rồi! Đặt 4 ngón tay trái lên A S D F để điều khiển khẩu pháo bên trái.',bg:BGF('#FF7B72',15),pc:0xFF7B72,ac:0xFFB74D,b:116,r:5},
+{n:'BOSS: Tổng Đốc Bạch Tuộc',bn:'TỔNG ĐỐC BẠCH TUỘC',d:'Tổng Đốc Bạch Tuộc khổng lồ chắn đường! Đặt tay phải lên J K L ; bắn liên tục để hạ gục nó!',bg:BGF('#65D6AD',85),pc:0x65D6AD,ac:0x4DD0E1,b:124,r:7},
+{n:'Siêu Pháo Đôi',d:'Hai tay cùng bắn! Gõ hàng cơ sở cùng G và H để siêu pháo đôi phá tan đội hình alien.',bg:BGF('#FFD166',50),pc:0xFFD166,ac:0xF48FB1,b:112,r:9},
+{n:'Trạm Radar Trên Cao',d:'Radar phát hiện alien trên cao! Tay trái với lên hàng Q W E R T để quét tìm chúng.',bg:BGF('#4DD0E1',30),pc:0x4DD0E1,ac:0x9CCC65,b:100,r:3},
+{n:'Radar Bên Phải',d:'Còn một đàn alien nữa! Dùng hàng Y U I O P bên phải để khóa mục tiêu.',bg:BGF('#B388FF',70),pc:0xB388FF,ac:0x82B1FF,b:140,r:0},
+{n:'Hầm Phóng Tên Lửa',d:'Tên lửa nằm dưới hầm! Gõ hàng dưới Z X C V B N M để phóng tên lửa lên trời.',bg:BGF('#FF8A65',50),pc:0xFF8A65,ac:0xFFE066,b:104,r:11},
+{n:'BOSS: Mẫu Hạm Alien',bn:'MẪU HẠM ALIEN',d:'Mẫu hạm Alien phát tín hiệu dấu câu để gây nhiễu! Gõ đúng dấu câu để bắn, mẫu hạm sẽ yếu dần!',bg:BGF('#65D6AD',25),pc:0x65D6AD,ac:0xFF8A65,b:96,r:2},
+{n:'Khiên Năng Lượng',d:'Alien bắn tia hủy diệt! Giữ Shift rồi bấm phím để bật khiên năng lượng bảo vệ phi đội.',bg:BGF('#8B7CF6',60),pc:0xBA68C8,ac:0xBA68C8,b:118,r:8},
+{n:'Phá Hàng Phòng Thủ',d:'Alien dựng hàng phòng thủ bằng cả câu dài! Gõ đúng từng câu để phá vỡ chúng.',bg:BGF('#FF3b3b',50),pc:0xFF5252,ac:0xFF5252,b:136,r:7},
+{n:'Mật Mã Căn Cứ Địch',d:'Đột nhập căn cứ alien! Gõ mật mã chữ và số để mở cổng và tiến vào.',bg:BGF('#4DB6AC',75),pc:0x4DB6AC,ac:0x4DB6AC,b:126,r:5},
+{n:'Phi Công Anh Hùng',d:'Chỉ huy cần ghi tên phi công anh hùng! Gõ tên của em lên bảng vàng chiến thắng.',bg:BGF('#FFCA28',40),pc:0xFFCA28,ac:0xFFCA28,b:122,r:2},
+{n:'BOSS CUỐI: Chúa Tể Alien',bn:'CHÚA TỂ ALIEN',d:'Chúa Tể Alien xuất hiện! Dùng mọi phím đã học để bắn hạ hắn và cứu Trái Đất!',bg:BGF('#7CFC00',50),pc:0x4DB9F5,ac:0x7CFC00,b:110,r:0}];
+M.forEach((m,i)=>{m.d=TH[i].d});
+const PRAISE=['Bắn trúng rồi!','Giỏi quá!','Chính xác!','Phi công xuất sắc!','Tuyệt vời!'];
+
+/* ---------- 2. BÀN PHÍM 3D (CSS 3D: mỗi phím là khối có mặt trên + mặt bên) ---------- */
+const P=(code,label,ch)=>({code,label,ch});
+const L=s=>[...s].map(c=>P((/\d/.test(c)?'Digit':'Key')+c,c,c));
+const X=(code,label,w,c)=>({code,label,w,c,sm:1,ch:code==='Space'?' ':null});
+const ROWS=[
+ [P('Backquote','`','`'),...L('1234567890'),P('Minus','-','-'),P('Equal','=','='),X('Backspace','Xóa',2,'#FF7B72')],
+ [X('Tab','Tab',1.5,'#9fb3d9'),...L('QWERTYUIOP'),P('BracketLeft','[','['),P('BracketRight',']',']'),{...P('Backslash','\\','\\'),w:1.5}],
+ [X('CapsLock','Caps',1.75,'#9fb3d9'),...L('ASDFGHJKL'),P('Semicolon',';',';'),P('Quote',"'","'"),X('Enter','Enter',2.25,'#65D6AD')],
+ [X('ShiftLeft','Shift',2.25,'#9fb3d9'),...L('ZXCVBNM'),P('Comma',',',','),P('Period','.','.'),P('Slash','/','/'),X('ShiftRight','Shift',2.75,'#9fb3d9')],
+ [{sp:4},X('Space','Space – Dấu cách',7,'#d6e4ff')]
+];
+// Màu theo ngón tay giúp học sinh nhớ ngón nào bấm phím nào
+const FZ=['`1QAZ','2WSX','3EDC','45RTFGVB','67YUHJNM','8IK,','9OL.','0-=P[]\\;\'/'],FC=['#FF8A80','#FFB74D','#FFE066','#69F0AE','#4DD0E1','#82B1FF','#B388FF','#F48FB1'];
+const zone=c=>{const i=FZ.findIndex(s=>s.includes(c));return i<0?'#d6e4ff':FC[i]};
+const els={}, KMAP={};
+function buildKB(){
+ const kb=$('#kb');
+ ROWS.forEach(r=>{const row=document.createElement('div');row.className='row';
+  r.forEach(k=>{
+   if(k.sp){row.insertAdjacentHTML('beforeend',`<div class="sp" style="--w:${k.sp}"></div>`);return}
+   const d=document.createElement('div');d.className='k'+((k.code==='KeyF'||k.code==='KeyJ')?' bump':'');
+   d.style.cssText=`--w:${k.w||1};--c:${k.c||zone(k.label)}`;
+   d.innerHTML=`<div class="cap"><div class="top ${k.sm?'sm':''}">${k.label}</div><div class="side"></div></div>`;
+   els[k.code]=d;KMAP[k.code]=k;
+   d.addEventListener('pointerdown',e=>{e.preventDefault();d.classList.add('down');press(k.code,k.ch)}); // chuột (không kiểm tra Shift)
+   ['pointerup','pointerleave'].forEach(ev=>d.addEventListener(ev,()=>d.classList.remove('down')));
+   row.appendChild(d)});
+  kb.appendChild(row)});
+}
+function setU(){document.documentElement.style.setProperty('--u',Math.max(14,Math.min(innerWidth*.84/15.8,innerHeight*.46/5.2))+'px')}
+addEventListener('resize',setU);
+const SHFT='!?:"()';
+const CODE=ch=>ch===' '?'Space':/[A-Z]/.test(ch)?'Key'+ch:/\d/.test(ch)?'Digit'+ch:({'!':'Digit1','.':'Period',';':'Semicolon',"'":'Quote',',':'Comma','?':'Slash','/':'Slash',':':'Semicolon','"':'Quote','(':'Digit9',')':'Digit0','-':'Minus'})[ch]||ch;
+const flash=(c,ok)=>{const e=els[c];if(!e)return;const k=ok===false?'bad':'ok';e.classList.add(k);setTimeout(()=>e.classList.remove(k),280)};
+
+/* ---------- 2b. MÔ HÌNH 3D THẬT (Three.js): bối cảnh, phi thuyền, kẻ địch, robot KEY-BOT, vệ tinh SPARK ---------- */
+const G3=(()=>{
+ const N={wave(){},fire(){},boom(){},party(){},act(){}};
+ if(!window.THREE)return N;
+ try{
+  const T=THREE,Mt=(c,o)=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.5,metalness:.15,flatShading:true},o)),
+   B=(g,m,x=0,y=0,z=0)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);return o},
+   Sp=(r,c,x,y,z,o)=>B(new T.SphereGeometry(r,14,10),Mt(c,o),x,y,z),
+   Bx=(w,h,d,c,x,y,z,o)=>B(new T.BoxGeometry(w,h,d),Mt(c,o),x,y,z),
+   Cn=(r,h,c,x,y,z,s)=>B(new T.ConeGeometry(r,h,s||8),Mt(c),x,y,z),
+   Cy=(a,b,h,c,x,y,z)=>B(new T.CylinderGeometry(a,b,h,12),Mt(c),x,y,z),
+   Ey=(x,y,z,g,r)=>[-1,1].flatMap(s=>[Sp(r,0xffffff,x+s*g,y,z),Sp(r*.55,0x10172D,x+s*g,y,z+r*.75)]),
+   G=(...a)=>{const g=new T.Group();g.add(...a);return g},
+   rz=(o,a)=>(o.rotation.z=a,o),rx=(o,a)=>(o.rotation.x=a,o),sc=(o,x,y,z)=>(o.scale.set(x,y,z),o),
+   mb=(c,o)=>new T.MeshBasicMaterial(Object.assign({color:c,transparent:true},o)),
+   mk=(cv,fov,z)=>{const r=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true});r.setPixelRatio(Math.min(devicePixelRatio,2));const s=new T.Scene(),c=new T.PerspectiveCamera(fov,1,.1,80);c.position.z=z;s.add(new T.AmbientLight(0xffffff,.75));const d=new T.DirectionalLight(0xffffff,.9);d.position.set(3,4,6);s.add(d);return{r,s,c,w:0,h:0}},
+   fit=o=>{const e=o.r.domElement,w=e.clientWidth,h=e.clientHeight;if(!w||!h)return 0;if(w!==o.w||h!==o.h){o.w=w;o.h=h;o.r.setSize(w,h,false);o.c.aspect=w/h;o.c.updateProjectionMatrix()}return 1};
+  // Sân khấu chiến trận phủ toàn bộ khu chơi, nằm phía sau chữ
+  const cv=document.createElement('canvas');cv.style.cssText='position:absolute;left:0;right:0;top:0;width:100%;height:calc(100% - var(--mh,17vh));z-index:1;pointer-events:none';$('#stage').appendChild(cv);
+  const L=mk(cv,35,9),Rb=mk($('#botc'),30,7),Bg=mk($('#bg'),45,14);
+  const D=0x10172D,W=0xffffff,Y=0xFFD166,GL={emissive:0xffaa00};
+  /* --- 9 kiểu alien 3D (8 = mẫu hạm boss) --- */
+  const AL=[
+   c=>{const g=G(sc(Sp(.9,0x9fb3d9),1.5,.35,1.5),Sp(.5,c,0,.25,0,{transparent:true,opacity:.85}),Sp(.18,0x7CFC00,0,.22,0),...Ey(0,.3,.17,.09,.06),...[0,1,2,3,4,5].map(i=>Sp(.08,Y,Math.cos(i*1.05)*1.25,0,Math.sin(i*1.05)*1.25,GL)));g.rotation.x=.4;return g},
+   c=>G(sc(Sp(.6,c,0,.4),1,1.2,1),...Ey(0,.5,.5,.24,.14),...[-.4,-.13,.13,.4].map(x=>rx(Cn(.1,.9,c,x,-.55,0,6),3.14))),
+   c=>G(sc(Sp(.55,c,0,.25),1,1.2,1),sc(Sp(.2,D,-.25,.3,.45),1,1.7,.5),sc(Sp(.2,D,.25,.3,.45),1,1.7,.5),Cy(.04,.04,.4,c,-.2,.95),Cy(.04,.04,.4,c,.2,.95),Sp(.1,Y,-.2,1.2,0,GL),Sp(.1,Y,.2,1.2,0,GL),Cy(.18,.28,.6,c,0,-.65)),
+   c=>G(sc(Sp(.7,c),1.4,.7,1),Sp(.28,c,-1.1,.3,0),Sp(.28,c,1.1,.3,0),Cn(.12,.4,0xffffff,-1.1,.65,0),Cn(.12,.4,0xffffff,1.1,.65,0),Cy(.04,.04,.4,c,-.3,.6),Cy(.04,.04,.4,c,.3,.6),Sp(.1,W,-.3,.85,0),Sp(.1,W,.3,.85,0),Sp(.05,D,-.3,.85,.08),Sp(.05,D,.3,.85,.08),...[-1,1].flatMap(s=>[0,1].map(i=>rz(Cy(.04,.04,.7,0x333a55,s*.9,-.45,(i-.5)*.5),s*.9)))),
+   c=>G(Sp(.5,c),Sp(.3,c,0,.4,-.1),...[-.18,0,.18].map(x=>Sp(.08,0xFF3b3b,x,.12,.46,{emissive:0xaa0000})),...[-1,1].flatMap(s=>[0,1,2].map(i=>rz(Cy(.04,.04,.9,0x333a55,s*.7,-.15-i*.12,(i-1)*.35),s*(.9+i*.25))))),
+   c=>G(Sp(.75,c),Sp(.4,W,0,.1,.55),Sp(.2,D,0,.1,.88),Cn(.14,.45,0xFFD166,-.4,.75,0),Cn(.14,.45,0xFFD166,.4,.75,0),Bx(.5,.08,.05,D,0,-.4,.7)),
+   c=>G(sc(Sp(.7,c),1.3,.8,1),sc(Sp(.5,0xbff0ff,-.5,.55,-.2,{transparent:true,opacity:.7}),.5,.1,1),sc(Sp(.5,0xbff0ff,.5,.55,-.2,{transparent:true,opacity:.7}),.5,.1,1),...Ey(0,.2,.65,.3,.12),Cy(.03,.03,.5,c,-.2,.85),Cy(.03,.03,.5,c,.2,.85)),
+   c=>G(Sp(.4,c),Sp(.17,0xFF3b3b,0,0,.35,{emissive:0xaa0000}),rz(Cy(.85,.85,.08,0x333a55,-.7,0,0),1.57),rz(Cy(.85,.85,.08,0x333a55,.7,0,0),1.57),rz(Cy(.06,.06,1.4,c),1.57)),
+   c=>{const g=G(sc(Sp(1.6,0x6b5bd6),1.5,.4,1.5),Sp(.85,c,0,.35,0),...Ey(0,.45,.68,.38,.22),Cy(.15,.15,.6,0x333a55,0,-.5),Sp(.2,0xFF3b3b,0,-.85,0,{emissive:0xaa0000}),...[0,1,2,3,4,5,6,7].map(i=>Sp(.1,Y,Math.cos(i*.785)*2.3,-.05,Math.sin(i*.785)*2.3,GL)));g.rotation.x=.25;return g},
+   c=>G(sc(Sp(1.1,c,0,.4),1,1.15,1),...Ey(0,.6,.95,.4,.26),Cn(.2,.7,Y,-.5,1.7,0),Cn(.25,.9,Y,0,1.85,0),Cn(.2,.7,Y,.5,1.7,0),Bx(.9,.1,.05,D,0,.1,1.05),...[-1,-.6,-.2,.2,.6,1].map(x=>rx(Cn(.16,1.6,c,x,-1.1,0,6),3.14))),
+   c=>G(Sp(1.3,0x4a2a7a),Sp(.7,W,0,.15,1.0),Sp(.35,0xFF3b3b,0,.15,1.55,{emissive:0xaa0000}),Cn(.25,1,c,-.9,1.3,0),Cn(.25,1,c,.9,1.3,0),Sp(.5,c,-1.5,-.2,0),Sp(.5,c,1.5,-.2,0),rz(Cy(.12,.12,1,0x333a55,-1.5,-.2,.6),1.57),rz(Cy(.12,.12,1,0x333a55,1.5,-.2,.6),1.57),Bx(1.2,.3,.5,0x333a55,0,-1.2,.3))];
+  const AT=[0,2,1,3,4,5,6,7,0,1,2,3,3,5,0],BT={4:9,9:8,14:10};
+  /* --- 4 chiến đấu cơ của người chơi (đổi theo màn) --- */
+  const HB=[
+   ()=>G(rz(Cn(.32,1.5,0x4DB9F5),-1.57),Bx(.8,.07,2.1,0xFFD166,-.4),Bx(.5,.55,.07,0xFF7B72,-.65,.32),Sp(.2,0xbff0ff,.05,.2,0,{emissive:0x2288cc})),
+   ()=>G(Bx(1.4,.35,.9,0xFF7B72),Sp(.3,0xbff0ff,.2,.25,0,{emissive:0x2288cc}),rz(Cy(.07,.07,1.2,0xFFD166,.9,0,.35),1.57),rz(Cy(.07,.07,1.2,0xFFD166,.9,0,-.35),1.57)),
+   ()=>G(Bx(1.5,.4,1,0x65D6AD),Sp(.4,0x4DB9F5,0,.35,0),rz(Cy(.07,.07,1.1,0xFFD166,.9,.4,0),1.57),Cy(.35,.35,.08,0xFFB020,-.4,-.3,0),Cy(.35,.35,.08,0xFFB020,.4,-.3,0)),
+   ()=>G(sc(rz(Cn(.45,1.9,0x8B7CF6),-1.57),1,.5,1),Bx(.5,.05,1.6,0xFF7B72,-.5),Sp(.15,0xbff0ff,.1,.15,0,{emissive:0x2288cc}))];
+  const root=new T.Group(),ship=new T.Group();root.add(ship);L.s.add(root);let eng=null;
+  const wg=[0,1].map(()=>{const g=G(HB[0]());g.scale.setScalar(.4);L.s.add(g);return g});
+  /* --- Nền chiến trường: hành tinh + phi đội alien & phi đội ta đang giao tranh, tia laser, nổ xa --- */
+  const tc=new T.Color(0x4DB9F5),planet=B(new T.SphereGeometry(3.4,32,24),Mt(0x4DB9F5,{flatShading:false,roughness:.8}));
+  const moon=B(new T.SphereGeometry(.7,16,12),Mt(0xcccccc,{flatShading:false}));Bg.s.add(planet,moon);
+  let props=[],lz=[],bt=0;
+  N.act=w=>{const h=TH[w];tc.setHex(h.pc);ship.clear();eng=Sp(.16,0xffa000,-.95,0,0,{emissive:0xff5500});ship.add(HB[w%4](),eng);
+   wg.forEach(g=>{g.clear();g.add(HB[(w+1)%4]())});
+   props.forEach(m=>Bg.s.remove(m));props=Array.from({length:12},(_,i)=>{const e=i<7,m=G(e?AL[AT[w]==8?0:AT[w]](h.ac):HB[i%4]());m.scale.setScalar(e?.3:.4);m.userData={e,x:Math.random(),r:Math.random()*9,y:Math.random()*6-1.5,z:-2-Math.random()*8,v:(e?-1:1)*(.5+Math.random()*.9)};Bg.s.add(m);return m})};
+  /* --- Đội hình alien: mỗi màn một kiểu chuyển động riêng --- */
+  let hw=8,hh=2.8,cx=4;
+  const MV=[
+   (x,y,i,n,t)=>[x,y+Math.sin(t*2+i)*.5],
+   (x,y,i,n,t)=>[x+Math.cos(t*1.6+i)*.45,y+Math.sin(t*1.6+i)*.45],
+   (x,y,i,n,t)=>[x+Math.sin(t+(i%3)*2)*1,y],
+   (x,y,i,n,t)=>[x,y+(Math.abs(((t*.8+i*.3)%2)-1)*2-1)*.7],
+   (x,y,i,n,t)=>[x+Math.sin(t*1.2+i)*.6,y+Math.sin(t*2.4+i)*.45],
+   (x,y,i,n,t)=>{const k=1+.2*Math.sin(t*2);return[(x-cx)*k+cx,y*k]},
+   (x,y,i,n,t)=>{const a=t*.5,c=Math.cos(a),s=Math.sin(a);return[cx+(x-cx)*c-y*s,(x-cx)*s+y*c]},
+   (x,y,i,n,t)=>[x-Math.max(0,Math.sin(t*1.3+i*.8))*2.5,y],
+   (x,y,i,n,t)=>[x,y+Math.abs(Math.sin(t*3+i))-.5],
+   (x,y,i,n,t)=>[cx+Math.cos(t*.9+i*.55)*hw*.4,Math.sin(t*1.8+i*.55)*hh*.5],
+   (x,y,i,n,t)=>[x+Math.sin(t*5+i)*.15,y+Math.cos(t*4+i)*.15+Math.sin(t)*.5],
+   (x,y,i,n,t)=>[x+Math.sin(t*1.5+i)*.5,y+Math.cos(t*1.5+i*2)*.5],
+   (x,y,i,n,t)=>[x+Math.sin(t*2+i)*.3,y],
+   (x,y,i,n,t)=>{const a=t*.8+i*6.283/n;return[cx+Math.cos(a)*hh*1.3,Math.sin(a)*hh*.7]},
+   (x,y,i,n,t)=>[x+Math.sin(t*.9+i*2)*.9,y+Math.cos(t*1.3+i*3)*.7]];
+  const MVb=(x,y,i,n,t)=>[cx+Math.sin(t*.7)*hw*.12,Math.sin(t*1.1)*hh*.3];
+  const slot=(i,n)=>{const rows=Math.min(3,n),cols=Math.ceil(n/3),col=i/3|0,row=i%3,cw=Math.min(1.4,hw*.5/Math.max(1,cols-1));return[cx+(col-(cols-1)/2)*cw,(row-(rows-1)/2)*Math.min(1.4,hh*.55)]};
+  let wv=[],es=[],bs=false,batk=3,ki=0,nn=1,wl=0,hit=0,shake=0,party=0,roll=0,kick=0;const beams=[],parts=[],rg=[],pend=[];
+  const tg=B(new T.TorusGeometry(.8,.05,8,24),mb(0xFFD166));tg.visible=false;L.s.add(tg);
+  const spark=(x,y,n,cols)=>{for(let i=0;i<n;i++){const m=B(new T.SphereGeometry(.06+Math.random()*.08,6,4),mb(cols[i%cols.length]),x,y,0),a=Math.random()*6.28,s=1.5+Math.random()*3;parts.push({m,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.8});L.s.add(m)}};
+  const wave_=(x,y)=>{const m=B(new T.TorusGeometry(.4,.05,8,24),mb(0xffffff),x,y,0);rg.push({m,t:0});L.s.add(m)};
+  N.wave=(w,n,k0)=>{[...wv,...es].forEach(a=>L.s.remove(a.m));wv=[];es=[];wl=w;bs=BT[w]!==undefined;batk=3;nn=bs?1:n;ki=bs?0:(k0||0);const ac=TH[w].ac;
+   for(let i=0;i<nn;i++){const m=AL[bs?BT[w]:AT[w]](ac),s=bs?(w==14?1.1:.9):.5;m.scale.setScalar(s);m.position.set(hw+3,(Math.random()-.5)*3,0);L.s.add(m);wv.push({m,i,s,st:i<ki?2:0,d:0,p:0,arr:i*.12});if(i<ki)m.visible=false}
+   if(bs)for(let i=0;i<4;i++){const m=AL[7](ac);m.scale.setScalar(.35);L.s.add(m);es.push({m,a:i*1.57})}};
+  const bolt=(a,b,ok,tgt,deco)=>{const m=B(new T.CylinderGeometry(.06,.06,.9,8),mb(ok?0x65D6AD:0xFF3b3b));m.rotation.z=Math.atan2(b.y-a.y,b.x-a.x)-1.5708;L.s.add(m);beams.push({m,a:a.clone(),b:b.clone(),t:0,ok,tg:tgt,deco})};
+  N.fire=ok=>{const a=wv[ki];if(!a||a.st)return;const p=a.m.position,s=root.position;
+   if(ok){kick=1;bolt(new T.Vector3(s.x+.9,s.y,0),p,true,a);wg.forEach(g=>bolt(g.position,p,true,a,1))}else bolt(p,new T.Vector3(s.x+.5,s.y,0),false,a)};
+  N.boom=soft=>{const a=wv[ki];if(!a)return;if(soft){a.p=1;spark(a.m.position.x,a.m.position.y,8,[Y,0xFF7B72,W]);return}pend.push({t:.28,a});ki++};
+  N.party=()=>{party=1.8;roll=1};
+  /* --- Robot KEY-BOT + vệ tinh SPARK --- */
+  const bot=new T.Group(),mouth=B(new T.BoxGeometry(.4,.06,.04),Mt(Y,{emissive:0xaa7700}),0,.66,.44),armR=new T.Group();armR.position.set(.7,.3,0);armR.add(B(new T.BoxGeometry(.25,.7,.25),Mt(0x8B7CF6),0,-.3));
+  bot.add(Bx(1.1,.85,.85,0xdfe8ff,0,.95),Bx(.9,.4,.05,D,0,.98,.44),Sp(.1,0x65D6AD,-.22,1,.48,{emissive:0x33ffaa}),Sp(.1,0x65D6AD,.22,1,.48,{emissive:0x33ffaa}),mouth,Cy(.04,.04,.4,0x9fb3d9,0,1.55),Sp(.1,Y,0,1.8,0,{emissive:0xaa7700}),Bx(1,.8,.7,0x4DB9F5),Bx(.3,.3,.05,Y,0,0,.36,{emissive:0xaa7700}),Bx(.25,.7,.25,0x8B7CF6,-.7,0),armR);
+  bot.position.set(-1.2,-.75,0);
+  const sp=G(Sp(.3,Y,0,0,0,{emissive:0xffaa00}),B(new T.TorusGeometry(.5,.05,8,24),Mt(0x4DB9F5,{emissive:0x1a5a88})),Bx(.6,.04,.25,0x2a5db0,.7,0,0,{emissive:0x0a2a66}),Bx(.6,.04,.25,0x2a5db0,-.7,0,0,{emissive:0x0a2a66}));
+  sp.children[1].rotation.x=1.2;Rb.s.add(bot,sp);
+  let last=performance.now();
+  (function loop(n){requestAnimationFrame(loop);const dt=Math.min(.05,(n-last)/1000);last=n;const t=n/1000;
+   if(fit(Bg)){const a=Bg.c.aspect,hx=Math.tan(.3927)*22*a;
+    planet.position.set(hx*.7,4.2,-8);planet.rotation.y+=dt*.1;planet.material.color.lerp(tc,Math.min(1,dt*2));
+    moon.position.set(planet.position.x+Math.cos(t*.4)*6.5,planet.position.y+Math.sin(t*.4)*1.5,-8+Math.sin(t*.4)*3);
+    props.forEach(m=>{const u=m.userData,dist=14-u.z,w=Math.tan(.3927)*dist*a;if(u.x>=0&&u.x<=1){u.x=-w-2+u.x*(2*w+4)}u.x+=u.v*dt;if(u.v>0&&u.x>w+2)u.x=-w-2;if(u.v<0&&u.x<-w-2)u.x=w+2;m.position.set(u.x,u.y+Math.sin(t+u.r)*.3,u.z);if(!u.e)m.rotation.z=Math.sin(t*2+u.r)*.15;else m.rotation.y=Math.sin(t+u.r)*.5});
+    bt-=dt;if(bt<=0&&props.length){bt=.2+Math.random()*.4;const p=props[Math.random()*props.length|0],e=p.userData.e,m=B(new T.BoxGeometry(.9,.05,.05),mb(e?0xFF3b3b:0x65D6AD),p.position.x,p.position.y,p.position.z);lz.push({m,v:(e?-1:1)*9,l:1.1,f:0});Bg.s.add(m)}
+    for(let i=lz.length;i--;){const o=lz[i];o.l-=dt;o.m.position.x+=o.v*dt;if(o.f){o.m.scale.setScalar(1+(.4-o.l)*10);o.m.material.opacity=Math.max(0,o.l*2.5)}if(o.l<=0){if(!o.f&&Math.random()<.5){o.m.geometry=new T.SphereGeometry(.3,8,6);o.m.material=mb(0xFFB020);o.l=.4;o.f=1;o.v=0}else{Bg.s.remove(o.m);lz.splice(i,1)}}}
+    Bg.r.render(Bg.s,Bg.c)}
+   if(fit(L)){
+    hh=Math.tan(.3054)*9;hw=hh*L.c.aspect;cx=hw*.5;const sx=-hw*.86,sy=-hh*.5;
+    shake=Math.max(0,shake-dt*3);kick=Math.max(0,kick-dt*5);roll=Math.max(0,roll-dt*1.2);
+    root.position.set(sx-kick*.4+Math.sin(t*60)*shake*.3,sy+Math.sin(t*2)*.12,0);
+    const tgt=wv[ki];let aim=0;if(tgt&&!tgt.st)aim=Math.atan2(tgt.m.position.y-sy,tgt.m.position.x-sx)*.35;
+    ship.rotation.set(.35+Math.sin(t*1.7)*.1+roll*6.28,-.35,aim);if(eng)eng.scale.setScalar(1+Math.sin(t*40)*.25);
+    wg.forEach((g,i)=>g.position.set(sx+.9+i*.8,sy+(i?-.9:1.1)+Math.sin(t*1.5+i*2)*.15,0));
+    const MVf=bs?MVb:MV[wl];
+    if(bs&&wv[0]&&wv[0].st==0&&wv[0].arr<=0){batk-=dt;if(batk<=0){batk=1.8+Math.random()*1.4;bolt(wv[0].m.position,new T.Vector3(sx+.5,sy,0),false,null,1)}}
+    wv.forEach(a=>{if(a.st==2)return;const u=a.m;
+     if(a.st==1){a.d+=dt;u.scale.setScalar(a.s*Math.max(0,1-a.d/.35));u.rotation.z+=dt*14;if(a.d>.35){a.st=2;u.visible=false}return}
+     a.arr-=dt;a.p=Math.max(0,a.p-dt*4);if(a.arr>0)return;
+     const s=slot(a.i,nn),q=MVf(s[0],s[1],a.i,nn,t),f=Math.min(1,dt*(a.fly?4:2.2));u.position.x+=(q[0]-u.position.x)*f;u.position.y+=(q[1]-u.position.y)*f;if(Math.abs(q[0]-u.position.x)<.4)a.fly=1;
+     u.rotation.y=Math.sin(t*1.5+a.i)*.35;u.rotation.z=Math.sin(t*2+a.i)*.1;
+     u.scale.setScalar(a.s*(a.i==ki?1+.08*Math.sin(t*8):1)*(1+a.p*.3));
+     u.visible=wl!=12||a.i==ki||Math.sin(t*3+a.i*1.7)>-.5});
+    es.forEach((e,i)=>{const b=wv[0];if(!b)return;e.m.position.set(b.m.position.x+Math.cos(e.a+t*1.5)*2.3,b.m.position.y+Math.sin(e.a+t*1.5)*1.3,.3);e.m.rotation.y=t*3});
+    const cur=wv[ki];tg.visible=!!cur&&!cur.st&&cur.arr<=0;if(tg.visible){tg.position.copy(cur.m.position);tg.scale.setScalar(cur.s*(bs?3:1.5)*(1+.1*Math.sin(t*6)));tg.rotation.z=t*2}
+    for(let i=pend.length;i--;){const o=pend[i];o.t-=dt;if(o.t<=0){const p=o.a.m.position;o.a.st=1;o.a.d=0;spark(p.x,p.y,30,[Y,0xFF7B72,W,0x65D6AD]);wave_(p.x,p.y);
+     if(bs){shake=1.5;for(let k=0;k<4;k++)setTimeout(()=>{spark(p.x+(Math.random()-.5)*3,p.y+(Math.random()-.5)*2,25,[Y,0xFF7B72,W]);wave_(p.x+(Math.random()-.5)*3,p.y)},k*150);es.forEach(e=>{spark(e.m.position.x,e.m.position.y,14,[Y,0xFF7B72]);L.s.remove(e.m)})}pend.splice(i,1)}}
+    for(let i=beams.length;i--;){const b=beams[i];if(b.ok&&b.tg&&b.tg.st==0)b.b.copy(b.tg.m.position);b.t+=dt/.3;const k=Math.min(1,b.t);b.m.position.lerpVectors(b.a,b.b,k);
+     if(b.t>=1){L.s.remove(b.m);beams.splice(i,1);if(b.ok){if(!b.deco){b.tg.p=1;spark(b.b.x-.3,b.b.y,6,[0x65D6AD,W])}}else shake=1}}
+    for(let i=rg.length;i--;){const r=rg[i];r.t+=dt;r.m.scale.setScalar(1+r.t*9);r.m.material.opacity=Math.max(0,1-r.t/.5);if(r.t>.5){L.s.remove(r.m);rg.splice(i,1)}}
+    for(let i=parts.length;i--;){const p=parts[i];p.l-=dt;p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.material.opacity=Math.max(0,p.l/.8);if(p.l<=0){L.s.remove(p.m);parts.splice(i,1)}}
+    L.r.render(L.s,L.c)}
+   if(fit(Rb)){const tk=$('#stage').classList.contains('talk');party=Math.max(0,party-dt*.8);
+    bot.rotation.y=Math.sin(t*.8)*.5;bot.position.y=-.75+Math.sin(t*2)*.06;mouth.scale.y=tk?1+Math.abs(Math.sin(t*14))*5:1;armR.rotation.z=tk?Math.sin(t*10)*.6:0;
+    sp.position.set(1.7,1+Math.sin(t*2.2)*.15+party*.3,.5);sp.rotation.y+=dt*(1.5+party*12);sp.scale.setScalar(1+party*.5);Rb.r.render(Rb.s,Rb.c)}
+  })(last);
+ }catch(e){console.error(e)}
+ return N;
+})();
+
+/* ---------- 3. LOGIC TRÒ CHƠI ---------- */
+let S={name:'PHI CONG',grade:1,w:0,done:Array(15).fill(0),stars:0,ok:0,tot:0,sec:0};
+let R={items:[],i:0,buf:[],hint:0,paused:false,active:false,sound:true,wait:false,guide:true};
+const save=()=>{try{localStorage.setItem('kq-space3',JSON.stringify(S))}catch(e){}};
+try{const s=JSON.parse(localStorage.getItem('kq-space3'));if(s&&s.name&&s.done&&s.done.length==15)S={...S,...s}}catch(e){}
+const act=m=>m/3|0;
+
+function say(t){$('#bubble').textContent=t;$('#stage').classList.add('talk');clearTimeout(say.t);say.t=setTimeout(()=>$('#stage').classList.remove('talk'),Math.min(3500,t.length*45))}
+function fb(t,c=''){const f=$('#fb');f.textContent=t;f.className=c}
+function hud(){
+ $('#wn').textContent='Màn '+(S.w+1)+'/15: '+TH[S.w].n;$('#stu').textContent='Phi công '+S.name;$('#stars').textContent=S.stars;
+ $('#frags').innerHTML=S.done.map((v,i)=>`<div class="fr ${v?'on':''}"><div class="gem"></div></div>`).join('');
+ [1,2].forEach(g=>{$('#bG'+g).classList.toggle('on',S.grade==g);$('#sg'+g).style.opacity=S.grade==g?1:.5});
+}
+function startM(m,keepI,warp){
+ S.w=Math.max(0,Math.min(14,m));const d=M[S.w];
+ if(warp){const a=$('#app');a.classList.add('warp');setTimeout(()=>a.classList.remove('warp'),900);sfx('warp')}
+ $('#app').style.setProperty('--bg',TH[S.w].bg);$('#st1').style.opacity=$('#st2').style.opacity=TH[S.w].day?.2:1;$('#bn').textContent=TH[S.w].bn||'';G3.act(S.w);G3.wave(S.w,d.items(S.grade).length,keepI);if(R.active){sfx('start');if(d.boss)warn()}
+ R.items=d.items(S.grade);R.i=keepI?Math.min(keepI,R.items.length-1):0;R.buf=[];R.hint=0;R.wait=false;
+ say(d.d);renderGuide();hud();render();save();fb(d.task);
+}
+function render(){
+ const d=M[S.w],it=R.items[R.i],n=R.items.length,T=$('#target');
+ $('#prog').style.width=(R.i/n*100)+'%';$('#pt').textContent='Bước '+Math.min(R.i+1,n)+'/'+n;
+ $('#acc').textContent=S.grade==2&&S.tot?'· Chính xác '+Math.round(S.ok/S.tot*100)+'%':'';
+ $('#boss').style.display=d.boss?'flex':'none';$('#hp').style.width=(100-R.i/n*100)+'%';
+ $('#hands').style.display=S.w>=3&&S.w<=5?'block':'none';
+ $$('.k.target,.k.need').forEach(k=>k.classList.remove('target','need'));
+ (d.need||[]).forEach(c=>els[c]&&els[c].classList.add('need'));
+ if(!it){$('#prompt').textContent='Hoàn thành nhiệm vụ '+(S.w+1)+'!'+'';T.innerHTML='';$('#mean').textContent='';$('#next').style.display=S.w<14?'inline-block':'none';return}
+ $('#next').style.display='none';$('#mean').textContent=it.m||'';
+ let glow=[];
+ if(it.t){
+  $('#prompt').textContent=it.p;
+  T.innerHTML=[...it.t].map((c,i)=>{const b=R.buf[i],x=v=>v===' '?'␣':v;
+   return `<span class="ch ${b?(b.ok?'ok':'bad'):i==R.buf.length?'cur':''}">${b?(b.ok?x(c):x(b.c.toUpperCase())):x(c)}</span>`}).join('');
+  if(R.buf.some(b=>!b.ok))glow=['Backspace'];else{const e=it.t[R.buf.length];glow=[CODE(e)];if(it.sh&&SHFT.includes(e))glow.push('ShiftLeft','ShiftRight')}
+ }else{
+  const hid=it.hide&&S.grade==2&&!R.hint;
+  $('#prompt').textContent=hid?'Nghe giáo viên gọi tên phím, rồi tìm nó!':it.p;
+  T.innerHTML=`<span class="ch big">${it.q||hid?'?':it.big}</span>`;
+  if(R.hint||!(hid||it.q))glow=it.k}
+ glow.forEach(c=>els[c]&&els[c].classList.add('target'));
+}
+function press(code,ch,sh){
+ sfx('key',code.charCodeAt(code.length-1));
+ if(!R.active||R.paused||R.wait)return;
+ const it=R.items[R.i];if(!it)return;
+ if(['ShiftLeft','ShiftRight','CapsLock','Tab'].includes(code)&&!(it.k&&it.k.includes(code))){flash(code,true);return}
+ if(it.t){
+  if(code==='Backspace'){if(R.buf.length){R.buf.pop();fb('Đã xóa! Gõ lại nhé.')}flash(code,true);render();return}
+  if(code==='Enter')return;
+  if(R.buf.some(b=>!b.ok)){fb('Bấm Backspace để sửa chữ sai!','bad');sfx('bad');flash('Backspace',false);return}
+  const e=it.t[R.buf.length],need=it.sh&&SHFT.includes(e),right=CODE(e)===code,ok=right&&(!need||sh!==false);S.tot++;
+  R.buf.push({ok,c:ch||KMAP[code].label});flash(code,ok);laser(ok);
+  if(ok){S.ok++;S.stars++;fl('+1',code);fb('')}else fb(right?'Giữ phím Shift rồi bấm phím này!':'Úi! Nhìn phím vàng sáng. Bấm Backspace.','bad');
+  render();hud();save();
+  if(R.buf.length===it.t.length&&R.buf.every(b=>b.ok))done();
+ }else{
+  S.tot++;
+  if(it.k.includes(code)){S.ok++;S.stars++;flash(code,true);fl('+1',code);laser(true);done()}
+  else{flash(code,false);laser(false);fb('Chưa đúng phím. Thử lại nhé, em làm được!','bad')}
+  hud();save();
+ }
+}
+function laser(ok){G3.fire(ok);sfx(ok?'zap':'bad')}
+function done(){
+ R.wait=true;fb(PRAISE[Math.random()*5|0],'good');G3.party();sfx('ok');cry();
+ G3.boom(!!M[S.w].boss&&R.i<R.items.length-1);
+ setTimeout(()=>{R.i++;R.buf=[];R.hint=0;R.wait=false;render();if(R.i>=R.items.length)missionDone()},900);
+}
+function missionDone(){
+ S.done[S.w]=1;save();hud();sfx('crystal');confetti(100,2500);
+ if(M[S.w].boss){const a=$('#app');a.classList.add('warp');setTimeout(()=>a.classList.remove('warp'),900);sfx('win');confetti(200,4000)}
+ if(S.w===14){setTimeout(victory,1300)}
+
+ else{say('Hạ gục hết alien ở '+TH[S.w].n+'! Bấm nút Qua màn để đi tiếp nhé!');fb('Hoàn thành! Bấm Qua màn ▶','good')}
+}
+function victory(){
+ R.active=false;sfx('win');confetti(300,7000);setTimeout(()=>confetti(200,5000),1500);
+ $('#cn').textContent=S.name;$('#cs').textContent=S.stars+' sao · Chính xác '+(S.tot?Math.round(S.ok/S.tot*100):100)+'% · Trái Đất đã được cứu!';$('#cert').classList.add('show');
+}
+function renderGuide(){
+ const d=M[S.w];$('#guide').style.display=R.guide?'':'none';
+ $('#guide').innerHTML=`<h3>CỤM PHÍM LUYỆN TẬP</h3><p>${d.cl}</p><h3>HƯỚNG DẪN GIÁO VIÊN</h3><p>${d.guide}</p><h3>LỜI THOẠI</h3><p>${d.d}</p><h3>NHIỆM VỤ HỌC SINH</h3><p>${d.task}</p><h3>ĐIỀU KIỆN HOÀN THÀNH</h3><p>${d.cond} (${R.items.length} bước)</p>`;
+}
+const fmt=s=>String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+setInterval(()=>{if(R.active&&!R.paused){S.sec++;if(S.sec%5==0)save()}$('#clk').textContent='Thời gian: '+fmt(S.sec)+' / 60:00 · Mỗi nhiệm vụ nên ~4 phút'},1000);
+
+/* ---------- 4. ÂM THANH & HIỆU ỨNG (Web Audio; không có âm thanh vẫn chơi được) ---------- */
+let AC;const ac=()=>{if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}if(AC&&AC.state==='suspended')AC.resume();return AC};
+function tone(f,d=.1,type='sine',v=.08,t0=0,f2){if(!R.sound)return;const a=ac();if(!a)return;try{const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const PS=[0,2,4,7,9],fq=n=>261.63*2**(n/12);
+function sfx(k,c=0){const r=TH[S.w].r,n=r+PS[c%5]+(c/5%3|0)*12;({
+ key:()=>tone(fq(n),.09,'triangle',.06,0,fq(n)*1.4),                       // gõ phím = nốt nhạc "bíp-bộp"
+ zap:()=>{tone(500,.16,'sine',.07,0,1600);tone(1600,.1,'triangle',.05,.12,2200)},   // pew!
+ bad:()=>{tone(330,.35,'sine',.09,0,110);tone(220,.3,'triangle',.05,.06,80)},       // boing!
+ ok:()=>[0,2,4,7].forEach((x,i)=>tone(fq(r+12+PS[x%5]+(x>4?12:0)),.12,'triangle',.08,i*.07)),
+ warp:()=>{tone(100,.8,'sawtooth',.05,0,1200);tone(400,.8,'sine',.05,.1,2400)},
+ siren:()=>[0,1,2,3,4,5].forEach(i=>tone(i%2?500:750,.18,'sawtooth',.06,i*.2)),
+ start:()=>[0,4,7,12,7,12].forEach((x,i)=>tone(fq(r+x),.16,'square',.04,i*.09)),
+ crystal:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.4,'triangle',.08,i*.1)),
+ win:()=>[523,659,784,1047,784,1047,1319,1568].forEach((f,i)=>{tone(f,.35,'triangle',.09,i*.13);tone(f/2,.3,'square',.03,i*.13)})})[k]()}
+function warn(){const w=$('#warn');w.textContent='⚠ CẢNH BÁO! '+TH[S.w].bn;w.classList.remove('on');void w.offsetWidth;w.classList.add('on');sfx('siren')}
+const cry=()=>{const f=300+S.w*70,g=S.w%2?f*2.2:f*.35,wv=['sawtooth','square','triangle'][S.w%3];tone(f,.3,wv,.08,.05,g);tone(g,.25,'sine',.05,.1,f);tone(120,.4,'sawtooth',.08,0,30)}; // alien kêu + bùm!
+let ms=0;                                   // nhạc nền vui: mỗi màn một nhịp, một tông, một giai điệu
+(function mus(){const h=TH[S.w];setTimeout(mus,30000/h.b);if(!R.active||R.paused)return;const i=ms++%16,d=(S.w*3+i*i+i*2)%5;
+ if((i*7+S.w)%5!=4)tone(fq(h.r+PS[d]+(i%8<4?12:0)),.22,['triangle','square','sine'][S.w%3],.03);
+ if(i%4==0){tone(fq(h.r-12+PS[(S.w+i/4)%5]),.28,'sine',.06);tone(110,.12,'sine',.06,0,45)}
+ if(i%2)tone(7000,.03,'square',.006)})();
+function fl(t,code){const e=els[code];if(!e)return;const r=e.getBoundingClientRect(),d=document.createElement('div');d.className='fl';d.textContent=t;d.style.left=r.left+r.width/2+'px';d.style.top=r.top+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
+function confetti(n,ms){const c=$('#cf'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;const cols=['#FFD166','#65D6AD','#FF7B72','#8B7CF6','#4DB9F5'];
+ const p=Array.from({length:n},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,vx:Math.random()*4-2,vy:2+Math.random()*4,s:5+Math.random()*7,c:cols[Math.random()*5|0],r:Math.random()*6}));const t0=performance.now();
+ (function f(t){x.clearRect(0,0,c.width,c.height);p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.r+=.1;x.fillStyle=q.c;x.save();x.translate(q.x,q.y);x.rotate(q.r);x.fillRect(-q.s/2,-q.s/2,q.s,q.s*.6);x.restore()});t-t0<ms?requestAnimationFrame(f):x.clearRect(0,0,c.width,c.height)})(t0)}
+
+/* ---------- 5. BÀN PHÍM THẬT & ĐIỀU KHIỂN GIÁO VIÊN ---------- */
+addEventListener('keydown',e=>{
+ if(e.target.closest&&e.target.closest('input'))return;
+ if(e.code==='F2'){e.preventDefault();$('#drawer').classList.toggle('open');return}
+ if(!R.active||e.ctrlKey||e.metaKey||e.altKey)return;
+ e.preventDefault();                          // chặn cuộn trang bằng Space, quay lại bằng Backspace
+ if(e.repeat||!els[e.code])return;            // bỏ qua giữ phím lặp
+ els[e.code].classList.add('down');
+ press(e.code,e.key.length===1?e.key:null,e.shiftKey);
+});
+addEventListener('keyup',e=>{if(els[e.code])els[e.code].classList.remove('down');if(R.active&&(e.code==='Space'||e.code==='Enter'))e.preventDefault()});
+document.addEventListener('click',()=>{const a=document.activeElement;if(a&&a.tagName==='BUTTON')a.blur()});
+
+const go=m=>{if(R.active&&m>=0&&m<=14)startM(m,0,act(m)!==act(S.w))};
+function begin(){
+ const n=$('#nm').value.toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();S.name=n||'PHI CONG';
+ R.active=true;$('#start').classList.remove('show');ac();startM(S.w,0,true);
+}
+$('#go').onclick=begin;
+$('#nm').value=S.name==='PHI CONG'?'':S.name;
+if(S.done.some(Boolean)||S.stars)$('#go').textContent='Tiếp tục hành trình!';
+$('#sg1').onclick=()=>{S.grade=1;hud()};$('#sg2').onclick=()=>{S.grade=2;hud()};
+$('#gear').onclick=()=>$('#drawer').classList.toggle('open');
+$('#dClose').onclick=()=>$('#drawer').classList.remove('open');
+addEventListener('keydown',e=>{if(e.code==='Escape')$('#drawer').classList.remove('open')});
+addEventListener('pointerdown',e=>{const d=$('#drawer');if(d.classList.contains('open')&&!d.contains(e.target)&&e.target.id!=='gear')d.classList.remove('open')});
+$('#hint').onclick=()=>{R.hint=1;render();fb('Hãy tìm phím đang sáng!')};
+$('#next').onclick=()=>go(S.w+1);
+$('#bStart').onclick=()=>{if(!R.active)$('#start').classList.add('show');else go(0)};
+$('#bNext').onclick=()=>go(S.w+1);$('#bPrev').onclick=()=>go(S.w-1);
+$('#bReplay').onclick=()=>say(M[S.w].d);$('#bReset').onclick=()=>R.active&&startM(S.w);
+$('#bGuideT').onclick=e=>{R.guide=!R.guide;e.target.textContent=R.guide?'Ẩn hướng dẫn':'Hiện hướng dẫn';renderGuide()};
+$('#bSnd').onclick=e=>{R.sound=!R.sound;e.target.textContent=R.sound?'Âm thanh: bật':'Âm thanh: tắt'};
+[1,2].forEach(g=>$('#bG'+g).onclick=()=>{S.grade=g;startM(S.w,R.i);save()});
+const pause=p=>{if(!R.active)return;R.paused=p;$('#pause').classList.toggle('show',p);$('#bPause').textContent=p?'Tiếp tục':'Tạm dừng'};
+$('#bPause').onclick=()=>pause(!R.paused);$('#resume').onclick=()=>pause(false);
+function restart(){S={...S,w:0,done:Array(15).fill(0),stars:0,ok:0,tot:0,sec:0};save();R.active=false;R.paused=false;$('#pause').classList.remove('show');$('#cert').classList.remove('show');$('#start').classList.add('show');$('#go').textContent='Cất cánh!';startM(0)}
+$('#bRestart').onclick=()=>{if(confirm('Chơi lại từ đầu? Mọi tiến trình sẽ bị xóa.'))restart()};
+$('#cAgain').onclick=restart;
+$('#cClose').onclick=()=>{$('#cert').classList.remove('show');R.active=true};
+
+buildKB();setU();hud();startM(S.w);
+</script></body></html>
